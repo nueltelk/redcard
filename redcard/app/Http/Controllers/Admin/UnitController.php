@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\LoanItem;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,7 +14,13 @@ class UnitController extends Controller
     public function index()
     {
         return view('admin.units.index', [
-            'units' => Unit::query()->orderBy('name')->get(),
+            'units' => Unit::query()
+                ->with('categories')
+                ->orderBy('name')
+                ->get(),
+            'categories' => Category::query()
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -23,10 +31,15 @@ class UnitController extends Controller
             'code' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:units,code'],
             'stock' => ['required', 'integer', 'min:0', 'max:1000000'],
             'description' => ['nullable', 'string', 'max:5000'],
-            
+            'category_names' => ['nullable', 'array'],
+            'category_names.*' => ['required', 'string', 'max:255'],
         ]);
 
-        Unit::create($data);
+        $categoryNames = $data['category_names'] ?? [];
+        unset($data['category_names']);
+
+        $unit = Unit::create($data);
+        $unit->syncCategoriesByName($categoryNames);
 
         return back()->with('success', 'Unit berhasil ditambahkan.');
     }
@@ -46,16 +59,34 @@ class UnitController extends Controller
             ],
             'description' => ['nullable', 'string', 'max:5000'],
             'stock' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'category_names' => ['nullable', 'array'],
+            'category_names.*' => ['required', 'string', 'max:255'],
         ]);
 
+        $categoryNames = $data['category_names'] ?? [];
+        unset($data['category_names']);
+
         $unit->update($data);
+        $unit->syncCategoriesByName($categoryNames);
 
         return back()->with('success', 'Unit berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
-        Unit::query()->whereKey($id)->delete();
+        $unit = Unit::query()->findOrFail($id);
+
+        $hasLoanHistory = LoanItem::query()
+            ->where('unit_id', $unit->id)
+            ->exists();
+
+        if ($hasLoanHistory) {
+            return back()->withErrors([
+                'unit_delete' => 'Unit tidak bisa dihapus karena sudah memiliki riwayat peminjaman.',
+            ]);
+        }
+
+        $unit->delete();
 
         return back()->with('success', 'Unit berhasil dihapus.');
     }

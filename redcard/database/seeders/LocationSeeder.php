@@ -9,14 +9,14 @@ class LocationSeeder extends Seeder
 {
     public function run(): void
     {
-        Location::query()->firstOrCreate(
+        Location::query()->updateOrCreate(
             ['name' => 'TULT'],
-            ['latitude' => -6.973, 'longitude' => 107.63],
+            ['latitude' => -6.969233739450027, 'longitude' => 107.62814578066697],
         );
 
-        Location::query()->firstOrCreate(
+        Location::query()->updateOrCreate(
             ['name' => 'Rektorat'],
-            ['latitude' => -6.974, 'longitude' => 107.631],
+            ['latitude' => -6.9740443, 'longitude' => 107.6304548],
         );
     }
 }

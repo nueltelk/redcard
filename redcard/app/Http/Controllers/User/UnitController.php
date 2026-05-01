@@ -15,9 +15,15 @@ class UnitController extends Controller
 
         $units = Unit::when($search, function ($query, $search) {
             return $query
-                ->where('name', 'like', "%$search%")
-                ->orWhere('code', 'like', "%$search%");
+                ->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%$search%")
+                        ->orWhere('code', 'like', "%$search%")
+                        ->orWhereHas('categories', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', "%$search%");
+                        });
+                });
         })
+            ->with('categories')
             ->orderBy('name')
             ->get();
 

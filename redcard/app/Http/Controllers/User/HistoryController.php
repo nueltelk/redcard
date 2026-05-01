@@ -11,10 +11,9 @@ class HistoryController extends Controller
     {
         $loans = Loan::query()
             ->where('user_id', auth()->id())
-            ->with('pickupLocation')
+            ->with(['pickupLocation', 'items.unit.categories'])
             ->latest()
             ->get();
-
         return view('user.history.index', compact('loans'));
     }
 }
