@@ -6,6 +6,7 @@ use App\Http\Controllers\User\HistoryController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\ReturnContactController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategory;
 use App\Http\Controllers\Admin\UnitController as AdminUnit;
 use App\Http\Controllers\Admin\LoanController as AdminLoan;
 use App\Http\Controllers\Admin\LocationController as AdminLocation;
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/admin/units', [AdminUnit::class, 'store']);
     Route::put('/admin/units/{id}', [AdminUnit::class, 'update']);
     Route::delete('/admin/units/{id}', [AdminUnit::class, 'destroy']);
+    Route::post('/admin/categories', [AdminCategory::class, 'store']);
     Route::get('/admin/loans', [AdminLoan::class, 'index']);
     Route::post('/admin/loans/{id}/return', [AdminLoan::class, 'return']);
     Route::get('/admin/locations', [AdminLocation::class, 'index']);

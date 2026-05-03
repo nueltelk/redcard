@@ -6,7 +6,7 @@
         <div>
             <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-[#e6c384]">Profil</p>
             <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Profil Saya</h1>
-            <p class="text-gray-400">Kelola informasi akun Anda secara mandiri.</p>
+            <p class="text-gray-400">Sama seperti data saat pendaftaran: nama, username, email, dan ubah kata sandi (opsional).</p>
         </div>
         <a
             href="/dashboard"
@@ -34,73 +34,80 @@
     @endif
 
     <div class="rounded-2xl border border-[#d2a14a]/20 bg-black/30 p-5 sm:p-6">
-        <form method="POST" action="/profile" class="space-y-4">
+        <form method="POST" action="/profile" class="flex flex-col gap-0">
             @csrf
             @method('PUT')
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="name" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Nama</label>
-                    <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        value="{{ old('name', $user->name) }}"
-                        required
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
-                    >
-                </div>
-                <div>
-                    <label for="username" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Username</label>
-                    <input
-                        id="username"
-                        name="username"
-                        type="text"
-                        value="{{ old('username', $user->username) }}"
-                        required
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
-                    >
-                </div>
+            <div class="mb-5">
+                <label for="name" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Nama lengkap</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value="{{ old('name', $user->name) }}"
+                    autocomplete="name"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3.5 text-[0.9375rem] text-[#f4ead8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="email" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Email</label>
-                    <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value="{{ old('email', $user->email) }}"
-                        required
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
-                    >
-                </div>
-                <div>
-                    <label for="phone" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">No. Telepon</label>
-                    <input
-                        id="phone"
-                        name="phone"
-                        type="text"
-                        value="{{ old('phone', $profile->phone) }}"
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
-                    >
-                </div>
+            <div class="mb-5">
+                <label for="username" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Username</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    required
+                    value="{{ old('username', $user->username) }}"
+                    autocomplete="username"
+                    placeholder="contoh: budi_001"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3.5 text-[0.9375rem] text-[#f4ead8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
             </div>
 
-            <div>
-                <label for="address" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Alamat</label>
-                <textarea
-                    id="address"
-                    name="address"
-                    rows="4"
-                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
-                    placeholder="Alamat lengkap..."
-                >{{ old('address', $profile->address) }}</textarea>
+            <div class="mb-5">
+                <label for="email" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value="{{ old('email', $user->email) }}"
+                    autocomplete="email"
+                    placeholder="nama@institusi.com"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3.5 text-[0.9375rem] text-[#f4ead8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
+            </div>
+
+            <p class="mb-3 mt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Ubah kata sandi <span class="font-normal normal-case text-[#6b6154]">(opsional, kosongkan jika tidak diganti)</span></p>
+
+            <div class="mb-5">
+                <label for="password" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Kata sandi baru</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    autocomplete="new-password"
+                    placeholder="Minimal 6 karakter"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3.5 text-[0.9375rem] text-[#f4ead8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
+            </div>
+
+            <div class="mb-2">
+                <label for="password_confirmation" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c]">Konfirmasi kata sandi</label>
+                <input
+                    type="password"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    autocomplete="new-password"
+                    placeholder="Ulangi kata sandi baru"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3.5 text-[0.9375rem] text-[#f4ead8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] outline-none transition placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
             </div>
 
             <button
                 type="submit"
-                class="w-full rounded-xl border border-[#c9a255]/50 bg-gradient-to-b from-[#f0d28a] via-[#d2a14a] to-[#b8893d] py-3 text-xs font-extrabold uppercase tracking-[0.16em] text-[#1a1208] transition hover:brightness-[1.04]"
+                class="mt-8 w-full cursor-pointer rounded-xl border border-[#c9a255]/50 bg-gradient-to-b from-[#f0d28a] via-[#d2a14a] to-[#b8893d] py-3.5 text-center text-xs font-extrabold uppercase tracking-[0.16em] text-[#1a1208] shadow-[0_10px_28px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] transition hover:brightness-[1.04] active:translate-y-px"
             >
                 Simpan Perubahan
             </button>
@@ -109,4 +116,3 @@
 
 </div>
 @endsection
-

@@ -10,13 +10,9 @@ class ProfileController extends Controller
 {
     public function edit()
     {
-        $user = auth()->user();
-        $profile = $user->profile ?? $user->profile()->create([
-            'phone' => '',
-            'address' => '',
+        return view('user.profile.edit', [
+            'user' => auth()->user(),
         ]);
-
-        return view('user.profile.edit', compact('user', 'profile'));
     }
 
     public function update(Request $request)
@@ -38,23 +34,20 @@ class ProfileController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:1000'],
+            'password' => ['nullable', 'min:6', 'confirmed'],
         ]);
 
-        $user->update([
+        $payload = [
             'name' => $data['name'],
             'username' => $data['username'],
             'email' => $data['email'],
-        ]);
+        ];
 
-        $user->profile()->updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'phone' => $data['phone'] ?? '',
-                'address' => $data['address'] ?? '',
-            ],
-        );
+        if (! empty($data['password'])) {
+            $payload['password'] = $data['password'];
+        }
+
+        $user->update($payload);
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }

@@ -50,7 +50,6 @@
             <div class="mb-4 flex items-end justify-between gap-3">
                 <div>
                     <h3 class="text-lg font-semibold text-white mb-1">Riwayat Peminjaman Terbaru</h3>
-                    <p class="text-sm text-gray-400">Ringkasan cepat pinjam & pengembalian.</p>
                 </div>
                 <a
                     href="/admin/loans"
@@ -119,7 +118,6 @@
 
         <div class="p-6 bg-black/30 border border-[#d2a14a]/20 rounded-lg">
             <h3 class="text-lg font-semibold text-white mb-1">Chat Pengembalian Terbaru</h3>
-            <p class="text-sm text-gray-400 mb-4">Pesan user dari tombol WhatsApp pengembalian barang.</p>
 
             <div class="overflow-x-auto rounded-xl border border-[#3a2b18]">
                 <table class="w-full table-fixed text-sm">

@@ -5,7 +5,6 @@
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Kelola Anggota</h1>
-            <p class="text-gray-400">Tambah, ubah, dan hapus akun pengguna.</p>
         </div>
         <a href="/admin" class="text-sm font-semibold text-[#e6c384] hover:text-[#f0d9a6] hover:underline underline-offset-4">
             Kembali ke Dashboard

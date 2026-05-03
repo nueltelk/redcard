@@ -195,10 +195,16 @@
                     <input
                         id="loan_date"
                         name="loan_date"
-                        type="date"
-                        value="{{ old('loan_date', now()->format('Y-m-d')) }}"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        maxlength="10"
+                        placeholder="dd/mm/yyyy"
+                        pattern="\d{1,2}/\d{1,2}/\d{4}"
+                        title="Format: tanggal/bulan/tahun (dd/mm/yyyy)"
+                        value="{{ old('loan_date', now()->format('d/m/Y')) }}"
                         required
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
                     >
                 </div>
                 <div>
@@ -206,11 +212,18 @@
                     <input
                         id="return_date"
                         name="return_date"
-                        type="date"
-                        value="{{ old('return_date', now()->addDays(1)->format('Y-m-d')) }}"
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        maxlength="10"
+                        placeholder="dd/mm/yyyy"
+                        pattern="\d{1,2}/\d{1,2}/\d{4}"
+                        title="Format: tanggal/bulan/tahun (dd/mm/yyyy)"
+                        value="{{ old('return_date', now()->addDays(5)->format('d/m/Y')) }}"
                         required
-                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                        class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-sm text-[#f4ead8] outline-none placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
                     >
+                    <p class="mt-1.5 text-[11px] text-[#8a7d6a]">Isi tanggal dalam format <span class="text-[#a8987c]">hari/bulan/tahun (dd/mm/yyyy)</span>. Otomatis terisi pinjam + 5 hari; Anda boleh ubah lebih awal (mis. 2–4 hari).</p>
                     <p id="return-date-warning" class="mt-2 hidden rounded-lg border border-red-500/35 bg-red-950/40 px-3 py-2 text-xs text-red-100">
                         Maksimal peminjaman 5 hari dari tanggal pinjam.
                     </p>
@@ -358,15 +371,27 @@
                 mapFrame.src = buildOpenStreetMapUrl(lat, lng);
             }
 
+            /** Tanggal dianggap lengkap (boleh diparse & di-jepit): dd/mm/yyyy atau yyyy-mm-dd. */
+            function isCompleteCalendarDateString(str) {
+                if (!str) return false;
+                var s = String(str).trim();
+                if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return true;
+                return /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s);
+            }
+
+            /**
+             * Parse teks tanggal: dd/mm/yyyy (Indonesia) atau cadangan yyyy-mm-dd.
+             * Untuk format slash: tahun harus 4 digit — supaya "15/05/2" tidak dianggap tahun 2 M (lalu di-jepit ke tanggal pinjam).
+             */
             function parseYmdFromInput(inputEl) {
                 if (!inputEl) return null;
                 var value = inputEl.value;
                 if (!value) return null;
                 var str = String(value).trim();
 
-                // Preferred: YYYY-MM-DD (spec value of <input type="date">)
                 var dash = str.split('-');
                 if (dash.length === 3) {
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
                     var y = parseInt(dash[0], 10);
                     var m = parseInt(dash[1], 10);
                     var d = parseInt(dash[2], 10);
@@ -375,22 +400,23 @@
                     }
                 }
 
-                // Fallback: DD/MM/YYYY or MM/DD/YYYY (when date input degrades to text)
                 var slash = str.split('/');
                 if (slash.length === 3) {
+                    var yPart = String(slash[2]).trim();
+                    if (!/^\d{4}$/.test(yPart)) return null;
+
                     var a = parseInt(slash[0], 10);
                     var b = parseInt(slash[1], 10);
-                    var y2 = parseInt(slash[2], 10);
+                    var y2 = parseInt(yPart, 10);
                     if (!isFinite(y2) || !isFinite(a) || !isFinite(b)) return null;
 
                     var day;
                     var month;
                     if (a > 12) {
-                        day = a; month = b; // DD/MM
+                        day = a; month = b;
                     } else if (b > 12) {
-                        month = a; day = b; // MM/DD
+                        month = a; day = b;
                     } else {
-                        // Ambiguous -> assume locale-style DD/MM first for Indonesia
                         day = a; month = b;
                     }
 
@@ -402,41 +428,55 @@
                 return null;
             }
 
-            function ymdToUtcDay(ymd) {
-                if (!ymd) return NaN;
-                return Math.floor(Date.UTC(ymd.y, ymd.m - 1, ymd.d) / 86400000);
+            function ymdToLocalDate(ymd) {
+                if (!ymd) return null;
+                var d = new Date(ymd.y, ymd.m - 1, ymd.d);
+                return isFinite(d.getTime()) ? d : null;
             }
 
-            function inputToUtcDay(inputEl) {
-                if (!inputEl) return NaN;
-
-                // Prefer numeric API when available (stable across locales)
-                var n = inputEl.valueAsNumber;
-                if (isFinite(n)) {
-                    return Math.floor(n / 86400000);
-                }
-
-                return ymdToUtcDay(parseYmdFromInput(inputEl));
+            function localDateFromInput(inputEl) {
+                return ymdToLocalDate(parseYmdFromInput(inputEl));
             }
 
-            function utcDayToYmdString(day) {
-                if (!isFinite(day)) return '';
-                var dt = new Date(day * 86400000);
-                var y = dt.getUTCFullYear();
-                var m = String(dt.getUTCMonth() + 1).padStart(2, '0');
-                var d = String(dt.getUTCDate()).padStart(2, '0');
-                return y + '-' + m + '-' + d;
+            /** Tampilan & nilai form: hari/bulan/tahun (dd/mm/yyyy). */
+            function formatDmyLocal(d) {
+                if (!(d instanceof Date) || !isFinite(d.getTime())) return '';
+                var day = String(d.getDate()).padStart(2, '0');
+                var m = String(d.getMonth() + 1).padStart(2, '0');
+                var y = d.getFullYear();
+                return day + '/' + m + '/' + y;
             }
 
-            function formatDateForInput(date) {
-                if (!(date instanceof Date) || !isFinite(date.getTime())) return '';
-                var y = date.getFullYear();
-                var m = String(date.getMonth() + 1).padStart(2, '0');
-                var d = String(date.getDate()).padStart(2, '0');
-                return y + '-' + m + '-' + d;
+            function addCalendarDaysLocal(date, days) {
+                var d = new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+                return isFinite(d.getTime()) ? d : null;
             }
 
-            function validateReturnDateRange() {
+            /** Selisih hari kalender antara dua tanggal lokal (inklusif sama hari = 0). */
+            function calendarDaysBetween(start, end) {
+                var ms = end.getTime() - start.getTime();
+                return Math.round(ms / 86400000);
+            }
+
+            /** Set tanggal kembali = tanggal pinjam + 5 hari (nilai yang disarankan / batas atas). Dipanggil saat tanggal pinjam diset lewat picker. */
+            function applyDefaultReturnFiveDaysAhead() {
+                if (!loanDateInput || !returnDateInput) return;
+                var loanDate = localDateFromInput(loanDateInput);
+                if (!loanDate) return;
+                var suggested = addCalendarDaysLocal(loanDate, 5);
+                if (!suggested) return;
+                returnDateInput.value = formatDmyLocal(suggested);
+                validateReturnDateRange();
+            }
+
+            /**
+             * Durasi pinjam mengikuti backend (maks. loan_date + 5 hari kalender).
+             * opts: { clampReturn?: boolean } — false pada event input tanggal kembali (jangan jepit saat tahun belum 4 digit).
+             */
+            function validateReturnDateRange(opts) {
+                opts = opts || {};
+                var shouldClampReturn = opts.clampReturn !== false;
+
                 if (!loanDateInput || !returnDateInput) return true;
 
                 if (!loanDateInput.value) {
@@ -448,44 +488,60 @@
                     return true;
                 }
 
-                var loanDay = inputToUtcDay(loanDateInput);
-                if (!isFinite(loanDay)) {
+                var loanDate = localDateFromInput(loanDateInput);
+                if (!loanDate) {
                     if (returnDateWarning) returnDateWarning.classList.add('hidden');
                     if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        var loanNonEmpty = String(loanDateInput.value || '').trim().length > 0;
+                        submitBtn.disabled = loanNonEmpty;
+                        submitBtn.classList.toggle('opacity-50', loanNonEmpty);
+                        submitBtn.classList.toggle('cursor-not-allowed', loanNonEmpty);
                     }
-                    return true;
+                    return false;
                 }
 
-                // Always compute constraints in ISO (YYYY-MM-DD) so <input type="date"> understands it.
-                var loanIso = utcDayToYmdString(loanDay);
-                var maxDay = loanDay + 5;
-                var maxIso = utcDayToYmdString(maxDay);
+                var maxReturnDate = addCalendarDaysLocal(loanDate, 5);
+                if (!maxReturnDate) return true;
 
-                if (loanDateInput.type === 'date') {
-                    loanDateInput.value = loanIso;
+                var retRaw = String(returnDateInput.value || '').trim();
+                var returnComplete = isCompleteCalendarDateString(retRaw);
+                var returnDate = returnComplete ? localDateFromInput(returnDateInput) : null;
+
+                if (shouldClampReturn && returnComplete && returnDate) {
+                    var clamped = returnDate;
+                    if (clamped < loanDate) clamped = loanDate;
+                    if (clamped > maxReturnDate) clamped = maxReturnDate;
+                    var clampedStr = formatDmyLocal(clamped);
+                    if (returnDateInput.value.trim() !== clampedStr) {
+                        returnDateInput.value = clampedStr;
+                        returnDate = clamped;
+                    }
                 }
 
-                if (returnDateInput.type === 'date') {
-                    returnDateInput.min = loanIso;
-                    returnDateInput.max = maxIso;
+                var span = returnComplete && returnDate ? calendarDaysBetween(loanDate, returnDate) : NaN;
+                var rangeInvalid = returnComplete && returnDate && (span < 0 || span > 5);
+
+                if (!returnComplete) {
+                    if (returnDateWarning) returnDateWarning.classList.add('hidden');
+                } else if (returnDateWarning) {
+                    returnDateWarning.classList.toggle('hidden', !rangeInvalid);
                 }
 
-                var returnDay = inputToUtcDay(returnDateInput);
-                var invalid = !isFinite(returnDay) || returnDay < loanDay || returnDay > maxDay;
-
-                if (returnDateWarning) {
-                    returnDateWarning.classList.toggle('hidden', !invalid);
+                var blockSubmit = false;
+                if (retRaw.length > 0 && !returnComplete) {
+                    blockSubmit = true;
+                } else if (returnComplete && !returnDate) {
+                    blockSubmit = true;
+                } else if (rangeInvalid) {
+                    blockSubmit = true;
                 }
-
                 if (submitBtn) {
-                    submitBtn.disabled = invalid;
-                    submitBtn.classList.toggle('opacity-50', invalid);
-                    submitBtn.classList.toggle('cursor-not-allowed', invalid);
+                    submitBtn.disabled = blockSubmit;
+                    submitBtn.classList.toggle('opacity-50', blockSubmit);
+                    submitBtn.classList.toggle('cursor-not-allowed', blockSubmit);
                 }
 
-                return !invalid;
+                return !blockSubmit;
             }
 
             openButtons.forEach(function (btn) {
@@ -494,10 +550,19 @@
 
             if (closeBtn) closeBtn.addEventListener('click', closeModal);
             if (pickupSelect) pickupSelect.addEventListener('change', renderPickupMap);
-            if (loanDateInput) loanDateInput.addEventListener('change', validateReturnDateRange);
-            if (returnDateInput) returnDateInput.addEventListener('change', validateReturnDateRange);
+            if (loanDateInput) loanDateInput.addEventListener('change', applyDefaultReturnFiveDaysAhead);
+            if (returnDateInput) {
+                returnDateInput.addEventListener('change', function () {
+                    validateReturnDateRange({ clampReturn: true });
+                });
+                returnDateInput.addEventListener('blur', function () {
+                    validateReturnDateRange({ clampReturn: true });
+                });
+                returnDateInput.addEventListener('input', function () {
+                    validateReturnDateRange({ clampReturn: false });
+                });
+            }
             if (loanDateInput) loanDateInput.addEventListener('input', validateReturnDateRange);
-            if (returnDateInput) returnDateInput.addEventListener('input', validateReturnDateRange);
             if (modal) {
                 modal.addEventListener('click', function (e) {
                     if (e.target === modal) closeModal();
@@ -511,7 +576,7 @@
             var borrowForm = modal ? modal.querySelector('form[action="/borrow"]') : null;
             if (borrowForm) {
                 borrowForm.addEventListener('submit', function (e) {
-                    if (!validateReturnDateRange()) {
+                    if (!validateReturnDateRange({ clampReturn: true })) {
                         e.preventDefault();
                     }
                 });

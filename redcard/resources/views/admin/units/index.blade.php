@@ -5,7 +5,6 @@
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Kelola Unit Barang</h1>
-            <p class="text-gray-400">Tambah, ubah, dan hapus unit inventaris.</p>
         </div>
         <a href="/admin" class="text-sm font-semibold text-[#e6c384] hover:text-[#f0d9a6] hover:underline underline-offset-4">
             Kembali ke Dashboard
@@ -76,20 +75,28 @@
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c] mb-2" for="category_names_create">Kategori (bisa lebih dari satu)</label>
+                    <label class="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c] mb-2" for="category_id_create">Kategori</label>
                     <select
-                        id="category_names_create"
-                        name="category_names[]"
-                        multiple
+                        id="category_id_create"
+                        name="category_id"
+                        required
                         class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-[0.9375rem] text-[#f4ead8] outline-none transition focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
                     >
+                        <option value="">Pilih satu kategori yang sudah ada</option>
                         @foreach (($categories ?? collect()) as $category)
-                            <option value="{{ $category->name }}" {{ collect(old('category_names', []))->contains($category->name) ? 'selected' : '' }}>
+                            <option value="{{ $category->id }}" {{ (string) old('category_id') === (string) $category->id ? 'selected' : '' }}>
                                 {{ $category->name }}
                             </option>
                         @endforeach
                     </select>
-                    <p class="mt-1 text-xs text-gray-500">Tekan Ctrl (Windows) untuk pilih lebih dari satu.</p>
+                    <button
+                        type="button"
+                        id="add-category-open"
+                        class="mt-2 w-full rounded-xl border border-[#c9a255]/35 bg-[#d2a14a]/10 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-[#e6c384] transition hover:bg-[#d2a14a]/20"
+                    >
+                        Tambah kategori baru
+                    </button>
+                    <p id="category-save-hint" class="mt-2 hidden text-xs text-emerald-400/95" role="status"></p>
                 </div>
 
 
@@ -198,7 +205,7 @@
                                                 data-unit-code="{{ $unit->code }}"
                                                 data-unit-stock="{{ $unit->stock ?? 0 }}"
                                                 data-unit-description="{{ $unit->description ?? '' }}"
-                                                data-unit-categories='@json($unit->categories->pluck("name")->values())'
+                                                data-unit-category-id="{{ $unit->categories->first()->id ?? '' }}"
                                                 class="w-full rounded-lg border border-[#c9a255]/40 bg-[#d2a14a]/15 px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#e6c384] transition hover:bg-[#d2a14a]/25"
                                             >
                                                 Edit
@@ -268,13 +275,13 @@
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c] mb-2" for="edit_category_names">Kategori (bisa lebih dari satu)</label>
-                <select id="edit_category_names" name="category_names[]" multiple class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-[0.9375rem] text-[#f4ead8] outline-none transition focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25">
+                <label class="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c] mb-2" for="edit_category_id">Kategori</label>
+                <select id="edit_category_id" name="category_id" required class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-[0.9375rem] text-[#f4ead8] outline-none transition focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25">
+                    <option value="">Pilih satu kategori yang sudah ada</option>
                     @foreach (($categories ?? collect()) as $category)
-                        <option value="{{ $category->name }}">{{ $category->name }}</option>
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-gray-500">Tekan Ctrl (Windows) untuk pilih lebih dari satu.</p>
             </div>
 
             <div>
@@ -300,9 +307,197 @@
         </form>
     </div>
 </div>
+
+<div id="add-category-modal" class="fixed inset-0 z-[95] hidden items-center justify-center bg-black/65 p-4 backdrop-blur-[2px]">
+    <div class="w-full max-w-md rounded-2xl border border-[#4a3d28] bg-gradient-to-b from-[#231a12] to-[#16110c] p-6 shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+        <div class="mb-4 flex items-start justify-between gap-3">
+            <div>
+                
+                <h3 class="mt-1 text-lg font-semibold text-[#f4ead8]">Tambah kategori baru</h3>
+            </div>
+            <button
+                type="button"
+                id="add-category-modal-close"
+                class="rounded-lg border border-[#3a2b18] bg-black/30 px-2.5 py-1.5 text-sm text-gray-200 hover:bg-black/50"
+            >
+                ✕
+            </button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#a8987c] mb-2" for="new_category_name">Nama kategori</label>
+                <input
+                    id="new_category_name"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="Contoh: Laptop"
+                    class="block w-full rounded-xl border border-[#3a2b18] bg-[#0d0a07]/90 px-4 py-3 text-[0.9375rem] text-[#f4ead8] outline-none transition placeholder:text-[#5c5244] focus:border-[#b8893d] focus:ring-2 focus:ring-[#d2a14a]/25"
+                >
+                <p id="add-category-error" class="mt-2 hidden text-xs text-red-300/95"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button
+                    type="button"
+                    id="add-category-submit"
+                    class="rounded-lg border border-[#c9a255]/40 bg-[#d2a14a]/15 px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#e6c384] transition hover:bg-[#d2a14a]/25 disabled:opacity-50"
+                >
+                    Simpan
+                </button>
+                <button
+                    type="button"
+                    id="add-category-cancel"
+                    class="rounded-lg border border-gray-400/20 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wide text-gray-200 transition hover:bg-white/10"
+                >
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('body_end')
+    <script>
+        (function () {
+            var csrfToken = @json(csrf_token());
+
+            var catModal = document.getElementById('add-category-modal');
+            var catOpenBtn = document.getElementById('add-category-open');
+            var catCloseBtn = document.getElementById('add-category-modal-close');
+            var catCancelBtn = document.getElementById('add-category-cancel');
+            var catSubmitBtn = document.getElementById('add-category-submit');
+            var catNameInput = document.getElementById('new_category_name');
+            var catErr = document.getElementById('add-category-error');
+            var catHint = document.getElementById('category-save-hint');
+            var selectCreate = document.getElementById('category_id_create');
+            var selectEdit = document.getElementById('edit_category_id');
+
+            function insertCategorySorted(selectEl, id, label) {
+                if (!selectEl) return;
+                var opt = document.createElement('option');
+                opt.value = String(id);
+                opt.textContent = label;
+                var options = selectEl.querySelectorAll('option');
+                var i = 1;
+                while (i < options.length) {
+                    if (options[i].textContent.localeCompare(label, 'id', { sensitivity: 'base' }) > 0) {
+                        selectEl.insertBefore(opt, options[i]);
+                        return;
+                    }
+                    i++;
+                }
+                selectEl.appendChild(opt);
+            }
+
+            function openCatModal() {
+                if (!catModal) return;
+                if (catErr) {
+                    catErr.classList.add('hidden');
+                    catErr.textContent = '';
+                }
+                if (catNameInput) catNameInput.value = '';
+                catModal.classList.remove('hidden');
+                catModal.classList.add('flex');
+                if (catNameInput) catNameInput.focus();
+            }
+
+            function closeCatModal() {
+                if (!catModal) return;
+                catModal.classList.add('hidden');
+                catModal.classList.remove('flex');
+            }
+
+            function showHint(text) {
+                if (!catHint) return;
+                catHint.textContent = text;
+                catHint.classList.remove('hidden');
+                window.clearTimeout(showHint._t);
+                showHint._t = window.setTimeout(function () {
+                    catHint.classList.add('hidden');
+                }, 4000);
+            }
+
+            if (catSubmitBtn) {
+                catSubmitBtn.addEventListener('click', function () {
+                    var name = catNameInput ? catNameInput.value.trim() : '';
+                    if (!name) {
+                        if (catErr) {
+                            catErr.textContent = 'Isi nama kategori.';
+                            catErr.classList.remove('hidden');
+                        }
+                        return;
+                    }
+                    if (catErr) catErr.classList.add('hidden');
+                    catSubmitBtn.disabled = true;
+                    fetch('/admin/categories', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ category_name: name }),
+                    })
+                        .then(function (res) {
+                            return res.json().then(function (data) {
+                                return { ok: res.ok, status: res.status, data: data };
+                            });
+                        })
+                        .then(function (result) {
+                            catSubmitBtn.disabled = false;
+                            if (result.ok && result.data.category) {
+                                var c = result.data.category;
+                                insertCategorySorted(selectCreate, c.id, c.name);
+                                insertCategorySorted(selectEdit, c.id, c.name);
+                                if (selectCreate) selectCreate.value = String(c.id);
+                                closeCatModal();
+                                showHint(result.data.message || 'Kategori tersimpan.');
+                                return;
+                            }
+                            var msg = 'Gagal menyimpan.';
+                            if (result.data.errors && result.data.errors.category_name) {
+                                msg = result.data.errors.category_name[0];
+                            } else if (result.data.message) {
+                                msg = result.data.message;
+                            }
+                            if (catErr) {
+                                catErr.textContent = msg;
+                                catErr.classList.remove('hidden');
+                            }
+                        })
+                        .catch(function () {
+                            catSubmitBtn.disabled = false;
+                            if (catErr) {
+                                catErr.textContent = 'Terjadi kesalahan jaringan. Coba lagi.';
+                                catErr.classList.remove('hidden');
+                            }
+                        });
+                });
+            }
+
+            if (catOpenBtn) catOpenBtn.addEventListener('click', openCatModal);
+            if (catCloseBtn) catCloseBtn.addEventListener('click', closeCatModal);
+            if (catCancelBtn) catCancelBtn.addEventListener('click', closeCatModal);
+            if (catModal) {
+                catModal.addEventListener('click', function (e) {
+                    if (e.target === catModal) closeCatModal();
+                });
+            }
+            if (catNameInput) {
+                catNameInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (catSubmitBtn) catSubmitBtn.click();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && catModal && catModal.classList.contains('flex')) closeCatModal();
+            });
+        })();
+    </script>
     <script>
         (function () {
             var modal = document.getElementById('edit-unit-modal');
@@ -315,7 +510,7 @@
             var codeInput = document.getElementById('edit_code');
             var stockInput = document.getElementById('edit_stock');
             var descInput = document.getElementById('edit_description');
-            var categorySelect = document.getElementById('edit_category_names');
+            var categorySelect = document.getElementById('edit_category_id');
 
             function openModal(button) {
                 if (!modal || !form || !button) return;
@@ -328,17 +523,8 @@
                 if (stockInput) stockInput.value = button.getAttribute('data-unit-stock') || '0';
                 if (descInput) descInput.value = button.getAttribute('data-unit-description') || '';
 
-                var selectedCategories = [];
-                try {
-                    selectedCategories = JSON.parse(button.getAttribute('data-unit-categories') || '[]');
-                } catch (e) {
-                    selectedCategories = [];
-                }
-
                 if (categorySelect) {
-                    Array.from(categorySelect.options).forEach(function (opt) {
-                        opt.selected = selectedCategories.indexOf(opt.value) !== -1;
-                    });
+                    categorySelect.value = button.getAttribute('data-unit-category-id') || '';
                 }
 
                 modal.classList.remove('hidden');
@@ -367,7 +553,10 @@
             }
 
             document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') closeModal();
+                if (e.key !== 'Escape') return;
+                var catM = document.getElementById('add-category-modal');
+                if (catM && catM.classList.contains('flex')) return;
+                closeModal();
             });
         })();
     </script>

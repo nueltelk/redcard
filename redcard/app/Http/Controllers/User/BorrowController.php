@@ -40,18 +40,33 @@ class BorrowController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'loan_date' => ['required', 'date'],
-            'return_date' => ['required', 'date', 'after_or_equal:loan_date'],
+        $datePattern = 'regex:/^(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})$/';
+
+        $data = $request->validate(
+            [
+            'loan_date' => ['required', 'string', $datePattern],
+            'return_date' => ['required', 'string', $datePattern],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],
             'pickup_location_id' => ['required', 'exists:locations,id'],
             'units' => ['required', 'array', 'min:1', 'max:2'],
             'units.*' => ['required', 'integer', 'distinct', 'exists:units,id'],
-        ]);
+            ],
+            [
+                'loan_date.regex' => 'Gunakan format tanggal dd/mm/yyyy (hari/bulan/tahun).',
+                'return_date.regex' => 'Gunakan format tanggal dd/mm/yyyy (hari/bulan/tahun).',
+            ]
+        );
 
         $loanDate = $this->parseCalendarDate((string) $data['loan_date']);
         $returnDate = $this->parseCalendarDate((string) $data['return_date']);
+
+        if ($returnDate->lt($loanDate)) {
+            throw ValidationException::withMessages([
+                'return_date' => 'Tanggal kembali harus sama atau setelah tanggal pinjam.',
+            ]);
+        }
+
         $maxReturnDate = $loanDate->copy()->addDays(5);
         if ($returnDate->gt($maxReturnDate)) {
             throw ValidationException::withMessages([

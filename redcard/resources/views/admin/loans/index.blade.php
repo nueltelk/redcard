@@ -5,7 +5,6 @@
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <h1 class="text-3xl sm:text-4xl font-bold text-white mb-2">Riwayat Peminjaman</h1>
-            <p class="text-gray-400">Pantau peminjaman yang sedang berjalan dan yang sudah dikembalikan.</p>
         </div>
         <div class="no-print flex flex-wrap items-center gap-2">
             <a
